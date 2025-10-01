@@ -13,8 +13,11 @@ import com.hospital.management.models.User;
 import com.hospital.management.models.Department;
 import com.hospital.management.models.Appointment;
 import com.hospital.management.common.enums.UserRole;
+import com.hospital.management.common.utils.InputValidator;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 import java.util.Optional;
 import java.util.List;
 import java.util.Map;
@@ -240,7 +243,26 @@ public class AdminMenuUI {
             }
 
             Long adminId = currentUser.getId();
-            Long targetUserId = Long.valueOf(input.getInt("👤 Enter User ID: ", 1, 999999));
+
+            // ✅ ADDED VALIDATION: Check if user ID is provided
+            String userIdInput = input.getString("👤 Enter User ID: ");
+            if (userIdInput.trim().isEmpty()) {
+                System.out.println("❌ User ID is required");
+                return;
+            }
+
+            // ✅ ADDED VALIDATION: Check if user ID is a valid number
+            Long targetUserId;
+            try {
+                targetUserId = Long.valueOf(userIdInput);
+                if (targetUserId <= 0) {
+                    System.out.println("❌ User ID must be a positive number");
+                    return;
+                }
+            } catch (NumberFormatException e) {
+                System.out.println("❌ Invalid User ID format. Please enter a valid number.");
+                return;
+            }
 
             System.out.println("🔄 Fetching user details...");
 
@@ -283,7 +305,31 @@ public class AdminMenuUI {
             }
 
             Long adminId = currentUser.getId();
-            Long targetUserId = Long.valueOf(input.getInt("👤 Enter User ID to delete: ", 1, 999999));
+
+            // ✅ ADDED VALIDATION: Check if user ID is provided and valid
+            String userIdInput = input.getString("👤 Enter User ID to delete: ");
+            if (userIdInput.trim().isEmpty()) {
+                System.out.println("❌ User ID is required");
+                return;
+            }
+
+            Long targetUserId;
+            try {
+                targetUserId = Long.valueOf(userIdInput);
+                if (targetUserId <= 0) {
+                    System.out.println("❌ User ID must be a positive number");
+                    return;
+                }
+            } catch (NumberFormatException e) {
+                System.out.println("❌ Invalid User ID format. Please enter a valid number.");
+                return;
+            }
+
+            // ✅ ADDED VALIDATION: Prevent admin from deleting their own account
+            if (targetUserId.equals(adminId)) {
+                System.out.println("❌ You cannot delete your own admin account!");
+                return;
+            }
 
             // Confirm deletion
             String confirmation = input.getString("Type 'DELETE' to confirm: ");
@@ -506,14 +552,15 @@ public class AdminMenuUI {
 
             Long adminId = currentUser.getId();
 
-            // Collect department information
-            String name = input.getString("🏢 Department Name: ");
+            // ✅ ADDED VALIDATIONS: Collect department information with validation
+            String name = getValidatedInput("🏢 Department Name: ", InputValidator::isValidName);
             String description = input.getString("📝 Description: ");
             String location = input.getString("📍 Location: ");
             String phone = input.getString("📞 Phone (optional): ");
 
-            if (name.trim().isEmpty()) {
-                System.out.println("❌ Department name is required");
+            // ✅ ADDED VALIDATION: Phone validation if provided
+            if (!phone.trim().isEmpty() && !InputValidator.isValidPhone(phone)) {
+                System.out.println("❌ Invalid phone number format");
                 return;
             }
 
@@ -546,7 +593,25 @@ public class AdminMenuUI {
             }
 
             Long adminId = currentUser.getId();
-            Long departmentId = Long.valueOf(input.getInt("🏢 Enter Department ID to delete: ", 1, 999999));
+
+            // ✅ ADDED VALIDATION: Check if department ID is provided and valid
+            String deptIdInput = input.getString("🏢 Enter Department ID to delete: ");
+            if (deptIdInput.trim().isEmpty()) {
+                System.out.println("❌ Department ID is required");
+                return;
+            }
+
+            Long departmentId;
+            try {
+                departmentId = Long.valueOf(deptIdInput);
+                if (departmentId <= 0) {
+                    System.out.println("❌ Department ID must be a positive number");
+                    return;
+                }
+            } catch (NumberFormatException e) {
+                System.out.println("❌ Invalid Department ID format. Please enter a valid number.");
+                return;
+            }
 
             // Confirm deletion
             String confirmation = input.getString("Type 'DELETE' to confirm: ");
@@ -584,26 +649,65 @@ public class AdminMenuUI {
 
             Long adminId = currentUser.getId();
 
-            // Collect doctor information
+            // ✅ ADDED VALIDATIONS: Collect doctor information with validation
             System.out.println("👤 Doctor Account Information:");
-            String username = input.getString("Username: ");
-            String password = input.getString("Password: ");
-            String email = input.getString("Email: ");
-            String phone = input.getString("Phone: ");
+            String username = getValidatedInput("Username: ", InputValidator::isValidUsername);
+
+            // ✅ ADDED CONFIRM PASSWORD VALIDATION
+            String password = getValidatedPassword("Password: ");
+            String confirmPassword = input.getPasswordInput("🔑 Confirm Password: ");
+
+            if (!password.equals(confirmPassword)) {
+                System.out.println("❌ Passwords do not match");
+                return;
+            }
+
+            String email = getValidatedInput("Email: ", InputValidator::isValidEmail);
+            String phone = getValidatedInput("Phone: ", InputValidator::isValidPhone);
 
             System.out.println("\n👨‍⚕️ Doctor Personal Information:");
-            String firstName = input.getString("First Name: ");
-            String lastName = input.getString("Last Name: ");
-            String specialization = input.getString("Specialization: ");
+            String firstName = getValidatedInput("First Name: ", InputValidator::isValidName);
+            String lastName = getValidatedInput("Last Name: ", InputValidator::isValidName);
+            String specialization = getValidatedInput("Specialization: ", InputValidator::isValidName);
             String licenseNumber = input.getString("License Number: ");
 
             System.out.println("\n🏥 Hospital Information:");
-            Long departmentId = Long.valueOf(input.getInt("Department ID: ", 1, 999999));
+
+            // ✅ ADDED VALIDATION: Department ID validation
+            String deptIdInput = input.getString("Department ID: ");
+            if (deptIdInput.trim().isEmpty()) {
+                System.out.println("❌ Department ID is required");
+                return;
+            }
+
+            Long departmentId;
+            try {
+                departmentId = Long.valueOf(deptIdInput);
+                if (departmentId <= 0) {
+                    System.out.println("❌ Department ID must be a positive number");
+                    return;
+                }
+            } catch (NumberFormatException e) {
+                System.out.println("❌ Invalid Department ID format. Please enter a valid number.");
+                return;
+            }
+
             String qualification = input.getString("Qualification: ");
             int experienceYears = input.getInt("Experience (years): ", 0, 50);
 
-            System.out.print("Consultation Fee (₹): ");
-            BigDecimal consultationFee = new BigDecimal(input.getString(""));
+            // ✅ ADDED VALIDATION: Consultation fee validation
+            String feeInput = input.getString("Consultation Fee (₹): ");
+            BigDecimal consultationFee;
+            try {
+                consultationFee = new BigDecimal(feeInput);
+                if (consultationFee.compareTo(BigDecimal.ZERO) < 0) {
+                    System.out.println("❌ Consultation fee cannot be negative");
+                    return;
+                }
+            } catch (NumberFormatException e) {
+                System.out.println("❌ Invalid fee format. Please enter a valid number.");
+                return;
+            }
 
             System.out.println("🔄 Adding doctor to system...");
 
@@ -696,12 +800,21 @@ public class AdminMenuUI {
 
             Long adminId = currentUser.getId();
 
-            String currentPassword = input.getString("🔑 Current Password: ");
-            String newPassword = input.getString("🔑 New Password: ");
-            String confirmPassword = input.getString("🔑 Confirm New Password: ");
+            // ✅ ADDED VALIDATIONS: Password change with validation
+            String currentPassword = input.getPasswordInput("🔑 Current Password: ");
+            String newPassword = getValidatedPassword("🔑 New Password: ");
+
+            // ✅ ADDED CONFIRM PASSWORD VALIDATION
+            String confirmPassword = input.getPasswordInput("🔑 Confirm New Password: ");
 
             if (!newPassword.equals(confirmPassword)) {
                 System.out.println("❌ New passwords do not match");
+                return;
+            }
+
+            // ✅ ADDED VALIDATION: Prevent using same password
+            if (currentPassword.equals(newPassword)) {
+                System.out.println("❌ New password cannot be the same as current password");
                 return;
             }
 
@@ -728,5 +841,39 @@ public class AdminMenuUI {
         System.out.println("🔐 For security reasons, admin password recovery requires manual verification");
         System.out.println("📧 Please contact the system administrator for password reset");
         System.out.println("🚧 Automated admin password recovery - Coming soon!");
+    }
+
+    // ✅ ADDED HELPER METHODS FOR VALIDATION (similar to PatientMenuUI)
+
+    private String getValidatedInput(String prompt, java.util.function.Predicate<String> validator) {
+        while (true) {
+            String input = this.input.getString(prompt);
+            if (validator.test(input)) {
+                return input;
+            }
+            System.out.println("❌ Invalid input format. Please try again.");
+        }
+    }
+
+    private String getValidatedPassword(String prompt) {
+        while (true) {
+            // ✅ This will use the password masking from InputHandler
+            String password = input.getPasswordInput(prompt);
+            if (InputValidator.isValidPassword(password)) {
+                return password;
+            }
+            System.out.println("❌ Password must be at least 8 characters with uppercase, lowercase, digit, and special character.");
+        }
+    }
+
+    private LocalDate getDateInput(String prompt) {
+        while (true) {
+            try {
+                String dateStr = input.getString(prompt);
+                return LocalDate.parse(dateStr);
+            } catch (DateTimeParseException e) {
+                System.out.println("❌ Invalid date format. Please use YYYY-MM-DD format.");
+            }
+        }
     }
 }

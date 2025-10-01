@@ -29,7 +29,8 @@ public class DatabaseConfig {
 
     // Local development credentials - UPDATE THESE WITH YOUR LOCAL MYSQL CREDENTIALS
     private static final String USERNAME = "root";  // Your local MySQL username
-    private static final String PASSWORD = "root";  // Your local MySQL password
+
+    private static final String PASSWORD = "12348765@";  // Your local MySQL password
 
     static {
         try {
